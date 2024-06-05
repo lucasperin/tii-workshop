@@ -1,7 +1,7 @@
 use Result;
 use std::fmt::Error;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct User {
     pub name: String,
     pub credit_line: u64,
@@ -51,7 +51,6 @@ impl Bank {
                 Err(Error)
             }
         }
-
     }
 
     pub fn accrue_interes(&mut self) {
@@ -60,6 +59,19 @@ impl Bank {
         }
         for user in self.users.iter_mut().filter(|user| user.balance < 0) {
             user.balance = ((user.balance * self.credit_interst as i64) as f32 / 100f32) as i64;
+        }
+    }
+    
+    pub fn merge_bank(&mut self, bank: Bank) {
+        for user in bank.users.iter() {
+             match self.user_index_by_name(user.name.as_str()) {
+                 Some(position) => {
+                     self.users[position].balance += user.balance;
+                 }
+                 None => {
+                     self.users.push(user.clone());
+                 }
+             }
         }
     }
 
@@ -91,9 +103,9 @@ mod tests {
     #[test]
     fn test_get_user() {
         let mut bank = setup_test();
-        let mut u1 = bank.user_index_by_name("User 1");
+        let u1 = bank.user_index_by_name("User 1");
         assert!(u1.is_some());
-        let mut u2 = bank.user_index_by_name("User 2");
+        let u2 = bank.user_index_by_name("User 2");
         assert!(u2.is_some());
         let u_invalid = bank.user_index_by_name("User 3");
         assert!(u_invalid.is_none());
@@ -119,5 +131,21 @@ mod tests {
         bank.accrue_interes();
         assert_eq!(bank.users[0].balance, 1010);
         assert_eq!(bank.users[1].balance, -105);
+    }
+
+    #[test]
+    fn test_merge() {
+        let mut bank = setup_test();
+        let mut bank2 = setup_test();
+        let u3 = User {
+            name: String::from("User 3"),
+            credit_line: 100,
+            balance: 1,
+        };
+        bank2.users.push(u3.clone());
+        bank.merge_bank(bank2);
+        assert_eq!(bank.users[2], u3);
+        assert_eq!(bank.users[0].balance, 2000);
+        assert_eq!(bank.users[1].balance, -200);
     }
 }
