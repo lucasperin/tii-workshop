@@ -21,10 +21,7 @@ struct BigUint<T: BigNumOps, const N: usize> {
     limbs: [T; N],
 }
 
-impl<T, const N: usize> Default for BigUint<T, N>
-where
-    T: BigNumOps + Default + Copy,
-{
+impl<T: BigNumOps, const N: usize> Default for BigUint<T, N> {
     fn default() -> Self {
         BigUint {
             limbs: [T::default(); N],
@@ -32,10 +29,7 @@ where
     }
 }
 
-impl<T, const N: usize> Add for BigUint<T, N>
-where
-    T: BigNumOps + Default + Copy,
-{
+impl<T: BigNumOps, const N: usize> Add for BigUint<T, N> {
     type Output = BigUint<T, N>;
 
     fn add(self, rhs: Self) -> Self::Output {
