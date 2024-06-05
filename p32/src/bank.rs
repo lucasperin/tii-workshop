@@ -1,5 +1,5 @@
-use Result;
 use std::fmt::Error;
+use Result;
 
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct User {
@@ -29,12 +29,27 @@ impl Bank {
 
     pub fn calc_balance(&mut self) -> BankBalance {
         BankBalance {
-            liabilities: self.users.iter().filter(|user| user.balance > 0).map(|user| user.balance).sum(),
-            assets: self.users.iter().filter(|user| user.balance < 0).map(|user| user.balance.abs()).sum(),
+            liabilities: self
+                .users
+                .iter()
+                .filter(|user| user.balance > 0)
+                .map(|user| user.balance)
+                .sum(),
+            assets: self
+                .users
+                .iter()
+                .filter(|user| user.balance < 0)
+                .map(|user| user.balance.abs())
+                .sum(),
         }
     }
 
-    pub fn transfer_funds(&mut self, amount: u64, origin: &str, destination: &str) -> Result<(), Error> {
+    pub fn transfer_funds(
+        &mut self,
+        amount: u64,
+        origin: &str,
+        destination: &str,
+    ) -> Result<(), Error> {
         let p1 = self.user_index_by_name(origin);
         let p2 = self.user_index_by_name(destination);
         match (p1, p2) {
@@ -47,9 +62,7 @@ impl Bank {
                     Err(Error)
                 }
             }
-            _ => {
-                Err(Error)
-            }
+            _ => Err(Error),
         }
     }
 
@@ -61,20 +74,19 @@ impl Bank {
             user.balance = ((user.balance * self.credit_interst as i64) as f32 / 100f32) as i64;
         }
     }
-    
+
     pub fn merge_bank(&mut self, bank: Bank) {
         for user in bank.users.iter() {
-             match self.user_index_by_name(user.name.as_str()) {
-                 Some(position) => {
-                     self.users[position].balance += user.balance;
-                 }
-                 None => {
-                     self.users.push(user.clone());
-                 }
-             }
+            match self.user_index_by_name(user.name.as_str()) {
+                Some(position) => {
+                    self.users[position].balance += user.balance;
+                }
+                None => {
+                    self.users.push(user.clone());
+                }
+            }
         }
     }
-
 }
 
 #[cfg(test)]
@@ -114,17 +126,23 @@ mod tests {
     #[test]
     fn test_get_transfer() {
         let mut bank = setup_test();
-        assert!(bank.transfer_funds( 200u64, "User 1", "User 2").is_ok());
-        assert!(bank.transfer_funds( 200u64, "User 2", "User 1").is_err());
-        assert!(bank.transfer_funds( 200u64, "User 3", "User 1").is_err());
+        assert!(bank.transfer_funds(200u64, "User 1", "User 2").is_ok());
+        assert!(bank.transfer_funds(200u64, "User 2", "User 1").is_err());
+        assert!(bank.transfer_funds(200u64, "User 3", "User 1").is_err());
     }
-    
+
     #[test]
     fn test_balance() {
         let mut bank = setup_test();
-        assert_eq!(bank.calc_balance(), BankBalance {liabilities:1000, assets:100});
+        assert_eq!(
+            bank.calc_balance(),
+            BankBalance {
+                liabilities: 1000,
+                assets: 100
+            }
+        );
     }
-    
+
     #[test]
     fn test_interest() {
         let mut bank = setup_test();
