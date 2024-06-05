@@ -31,10 +31,10 @@ impl Chorus {
             Chorus::Ninth => "ninth",
             Chorus::Tenth => "tenth",
             Chorus::Eleventh => "eleventh",
-            Chorus::Twelfth => "twelfth"
+            Chorus::Twelfth => "twelfth",
         }
     }
-    
+
     fn phrase(&self) -> &str {
         match self {
             Chorus::First => "A partridge in a pear tree",

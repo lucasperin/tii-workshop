@@ -1,4 +1,3 @@
-
 pub trait ShapeArea {
     fn area(&self) -> Option<f32>;
 }
@@ -11,7 +10,7 @@ pub enum Shape {
     Point(Point),
     Circle(Circle),
     Triangle(Triangle),
-    Rectangle(Rectangle)
+    Rectangle(Rectangle),
 }
 
 pub struct Point {
@@ -64,7 +63,7 @@ impl ShapePerimeter for Rectangle {
     fn perimeter(&self) -> Option<f32> {
         let base = (self.a.x - self.b.x).abs();
         let height = (self.a.y - self.b.y).abs();
-        Some((2 *( base + height)) as f32)
+        Some((2 * (base + height)) as f32)
     }
 }
 
@@ -80,19 +79,13 @@ mod tests {
 
     #[test]
     fn point_area() {
-        let p = Point {
-            x: 1,
-            y: 2,
-        };
+        let p = Point { x: 1, y: 2 };
         assert!(p.area().is_none());
     }
 
     #[test]
     fn point_perimeter() {
-        let p = Point {
-            x: 1,
-            y: 2,
-        };
+        let p = Point { x: 1, y: 2 };
         assert!(p.perimeter().is_none());
     }
 }

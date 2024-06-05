@@ -32,7 +32,7 @@ struct TwoValues<'a> {
 
 impl<'a> TwoValues<'a> {
     pub fn new(first: &'a usize, second: &'a usize) -> Self {
-        Self { first, second}
+        Self { first, second }
     }
 
     pub fn get_first(&self) -> &'a usize {

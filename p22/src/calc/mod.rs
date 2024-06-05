@@ -35,7 +35,7 @@ pub fn fibonacci_rec(n: u32) -> u64 {
     } else if n == 1 {
         1u64
     } else {
-        fibonacci_rec(n - 1) + fibonacci_rec( n - 2)
+        fibonacci_rec(n - 1) + fibonacci_rec(n - 2)
     }
 }
 
@@ -63,7 +63,7 @@ mod tests {
         assert_eq!(fibonacci_loop(5), 5);
         assert_eq!(fibonacci_loop(6), 8);
     }
-    
+
     #[test]
     fn fibonacci_rec_test() {
         assert_eq!(fibonacci_rec(0), 0);
