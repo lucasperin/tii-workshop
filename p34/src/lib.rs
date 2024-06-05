@@ -43,7 +43,7 @@ impl<T: BigNumOps, const N: usize> Add for BigUint<T, N> {
             carry = (overflow1 || overflow2).into();
         }
         if carry > T::default() {
-            panic!("Overflow for when adding values of size {}.", N * 64);
+            panic!("Overflow, addition exceeds type representation.");
         }
         out
     }
