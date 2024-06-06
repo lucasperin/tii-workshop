@@ -1,6 +1,7 @@
+use std::fmt::Debug;
 use std::ops::Add;
 
-trait BigNumOps: Sized + Default + Copy + PartialOrd + From<bool> {
+trait BigNumOps: Debug + Sized + Default + Copy + PartialOrd + From<bool> {
     fn add_overflow(self, rhs: Self) -> (Self, bool);
 }
 
@@ -42,9 +43,7 @@ impl<T: BigNumOps, const N: usize> Add for BigUint<T, N> {
             out.limbs[i] = sum;
             carry = (overflow1 || overflow2).into();
         }
-        if carry > T::default() {
-            panic!("Overflow, addition exceeds type representation.");
-        }
+        debug_assert_eq!(carry, T::default());
         out
     }
 }
@@ -75,8 +74,9 @@ mod tests {
     }
 
     #[test]
+    #[cfg(debug_assertions)]
     #[should_panic]
-    fn test_bu64_add_overflow_panix() {
+    fn test_bu64_add_overflow_panics() {
         let u1 = BU64 {
             limbs: [0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF],
         };
@@ -103,8 +103,9 @@ mod tests {
     }
 
     #[test]
+    #[cfg(debug_assertions)]
     #[should_panic]
-    fn test_bu32_add_overflow_panix() {
+    fn test_bu32_add_overflow_panics() {
         let u1 = BU32 {
             limbs: [0xFFFFFFFF, 0xFFFFFFFF],
         };
