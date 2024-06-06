@@ -1,5 +1,9 @@
-use std::fmt::Error;
 use Result;
+
+pub enum Error {
+    NotEnoughFunds,
+    UserDoesNotExists,
+}
 
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct User {
@@ -18,8 +22,8 @@ pub struct Bank {
 
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct BankBalance {
-    pub liabilities: i64,
-    pub assets: i64,
+    pub liabilities: u64,
+    pub assets: u64,
 }
 
 impl Bank {
@@ -33,13 +37,13 @@ impl Bank {
                 .users
                 .iter()
                 .filter(|user| user.balance > 0)
-                .map(|user| user.balance)
+                .map(|user| user.balance.unsigned_abs())
                 .sum(),
             assets: self
                 .users
                 .iter()
                 .filter(|user| user.balance < 0)
-                .map(|user| user.balance.abs())
+                .map(|user| user.balance.unsigned_abs())
                 .sum(),
         }
     }
@@ -56,33 +60,33 @@ impl Bank {
             (Some(p1), Some(p2)) => {
                 if self.users[p1].balance >= amount as i64 {
                     self.users[p1].balance -= amount as i64;
-                    self.users[p2].balance -= amount as i64;
+                    self.users[p2].balance += amount as i64;
                     Ok(())
                 } else {
-                    Err(Error)
+                    Err(Error::NotEnoughFunds)
                 }
             }
-            _ => Err(Error),
+            _ => Err(Error::UserDoesNotExists),
         }
     }
 
     pub fn accrue_interes(&mut self) {
         for user in self.users.iter_mut().filter(|user| user.balance > 0) {
-            user.balance = ((user.balance * self.debit_interst as i64) as f32 / 100f32) as i64;
+            user.balance += user.balance * self.debit_interst as i64 / 10_000;
         }
         for user in self.users.iter_mut().filter(|user| user.balance < 0) {
-            user.balance = ((user.balance * self.credit_interst as i64) as f32 / 100f32) as i64;
+            user.balance += user.balance * self.credit_interst as i64 / 10_000;
         }
     }
 
     pub fn merge_bank(&mut self, bank: Bank) {
-        for user in bank.users.iter() {
+        for user in bank.users {
             match self.user_index_by_name(user.name.as_str()) {
                 Some(position) => {
                     self.users[position].balance += user.balance;
                 }
                 None => {
-                    self.users.push(user.clone());
+                    self.users.push(user);
                 }
             }
         }
@@ -107,8 +111,8 @@ mod tests {
         Bank {
             name: String::from("ABCD"),
             users: vec![u1, u2],
-            credit_interst: 105,
-            debit_interst: 101,
+            credit_interst: 500,
+            debit_interst: 100,
         }
     }
 
@@ -138,7 +142,7 @@ mod tests {
             bank.calc_balance(),
             BankBalance {
                 liabilities: 1000,
-                assets: 100
+                assets: 100,
             }
         );
     }
