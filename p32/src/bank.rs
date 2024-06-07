@@ -54,17 +54,9 @@ impl Bank {
     }
 
     fn add_to_balance(&mut self, origin: &str, amount: i64) -> Result<(), Error> {
-        let user = self.users.get_mut(origin);
-        match user {
-            Some(user) => match user.balance.checked_add(amount) {
-                Some(new_balance) => {
-                    user.balance = new_balance;
-                    Ok(())
-                }
-                None => Err(Error::Overflow),
-            },
-            None => Err(Error::UserDoesNotExists),
-        }
+        let user = self.users.get_mut(origin).ok_or(Error::UserDoesNotExists)?;
+        user.balance = user.balance.checked_add(amount).ok_or(Error::Overflow)?;
+        Ok(())
     }
 
     pub fn transfer_funds(
