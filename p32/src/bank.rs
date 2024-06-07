@@ -40,15 +40,15 @@ impl Bank {
         BankBalance {
             liabilities: self
                 .users
-                .iter()
-                .filter(|(_, user)| user.balance > 0)
-                .map(|(_, user)| user.balance.unsigned_abs())
+                .values()
+                .filter(|user| user.balance > 0)
+                .map(|user| user.balance.unsigned_abs())
                 .sum(),
             assets: self
                 .users
-                .iter()
-                .filter(|(_, user)| user.balance < 0)
-                .map(|(_, user)| user.balance.unsigned_abs())
+                .values()
+                .filter(|user| user.balance < 0)
+                .map(|user| user.balance.unsigned_abs())
                 .sum(),
         }
     }
@@ -65,10 +65,19 @@ impl Bank {
         origin: &str,
         destination: &str,
     ) -> Result<(), Error> {
+        let amount: i64 = amount.try_into().map_err(|_| Error::BadConversion)?;
         match (self.users.get(origin), self.users.get(destination)) {
             (Some(p1), Some(_)) => {
-                if p1.balance - amount as i64 >= (p1.credit_line as i64).neg() {
-                    let amount: i64 = amount.try_into().map_err(|_| Error::BadConversion)?;
+                let origin_credit_line: i64 = p1
+                    .credit_line
+                    .try_into()
+                    .map_err(|_| Error::BadConversion)?;
+                if p1
+                    .balance
+                    .checked_sub(origin_credit_line)
+                    .ok_or(Error::Overflow)?
+                    >= origin_credit_line.neg()
+                {
                     self.add_to_balance(origin, amount.neg())?;
                     self.add_to_balance(destination, amount)?;
                     Ok(())
@@ -81,10 +90,10 @@ impl Bank {
     }
 
     pub fn accrue_interest(&mut self) {
-        for (_, user) in self.users.iter_mut().filter(|(_, user)| user.balance > 0) {
+        for user in self.users.values_mut().filter(|user| user.balance > 0) {
             user.balance += user.balance * self.debit_interst as i64 / 10_000;
         }
-        for (_, user) in self.users.iter_mut().filter(|(_, user)| user.balance < 0) {
+        for user in self.users.values_mut().filter(|user| user.balance < 0) {
             user.balance += user.balance * self.credit_interst as i64 / 10_000;
         }
     }
