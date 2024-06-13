@@ -17,7 +17,7 @@ include_version = false
 #sys_includes = []
 includes = ["stdint.h", "stddef.h"]
 no_includes = true
-# cpp_compat = true
+cpp_compat = true
 after_includes = "\n#define CRYPTO_ALIGNED(n) __attribute__((aligned(n)))\n#define CRYPTO_MUST_USE __attribute__((warn_unused_result))"
 
 
@@ -40,7 +40,9 @@ line_endings = "LF" # also "CR", "CRLF", "Native"
 
 style = "type"
 usize_is_size_t = true
-cpp_compat = true
+
+[defines]
+"feature = sha3_512" = "SHA3_512"
 
 
 [fn]
@@ -126,7 +128,11 @@ bitflags = false
 # could be unsafe for C callers to use a incorrectly-aligned union.
 aligned_n = "CRYPTO_ALIGNED"
 
+[export]
 
+# A list of items to not include in the generated bindings
+# default: []
+# exclude = ["SHA3_512_ALG_ID"]
 
 ############## Options for How Your Rust library Should Be Parsed ##############
 
@@ -144,3 +150,5 @@ crates = []
 all_features = false
 default_features = false
 features = []
+
+profile = "Release"

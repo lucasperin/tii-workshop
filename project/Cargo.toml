@@ -16,4 +16,5 @@ static_assertions = "1.1"
 cbindgen = "0.26.0"
 
 [features]
+default = []
 sha3_512 = []
