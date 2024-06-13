@@ -1,6 +1,6 @@
 mod internal_hash_context;
 
-use internal_hash_context::InternalHashContex;
+use internal_hash_context::InternalHashContext;
 use static_assertions as sa;
 use std::ptr;
 
@@ -39,6 +39,8 @@ pub enum CryptoResult {
 ///
 pub const SHA256_ALG_ID: u32 = 0;
 pub const SHA3_256_ALG_ID: u32 = 1;
+#[cfg(feature = "sha3_512")]
+pub const SHA3_512_ALG_ID: u32 = 2;
 
 /// Byte length of Context internal state.
 pub const CRYPTO_CONTEXT_STATE_SIZE: usize = 45;
@@ -52,8 +54,8 @@ pub struct CryptoContext {
     pub state: [u64; CRYPTO_CONTEXT_STATE_SIZE],
 }
 
-sa::assert_eq_size!(CryptoContext, InternalHashContex);
-sa::assert_eq_align!(CryptoContext, InternalHashContex);
+sa::assert_eq_size!(CryptoContext, InternalHashContext);
+sa::assert_eq_align!(CryptoContext, InternalHashContext);
 
 /// Crypto init
 /// Initialize a context with a given algorithm.
@@ -66,7 +68,7 @@ pub unsafe extern "C" fn crypto_init(ctx: *mut CryptoContext, algorithm_id: u32)
     if ctx.is_null() {
         return CryptoResult::PointerCannotBeNull;
     }
-    InternalHashContex::new(algorithm_id)
+    InternalHashContext::new(algorithm_id)
         .map(|new_ctx| {
             ptr::write(ctx.cast(), new_ctx);
             CryptoResult::Success
@@ -89,7 +91,7 @@ pub unsafe extern "C" fn crypto_update(
     if ctx.is_null() || input.is_null() {
         return CryptoResult::PointerCannotBeNull;
     }
-    let internal_context: &mut InternalHashContex = &mut *(ctx.cast());
+    let internal_context: &mut InternalHashContext = &mut *(ctx.cast());
     // This must be checked as `from_raw_parts_mut` has many undefined behavior conditions that
     // must be guaranteed by the caller. In this case, some of them must be guaranteed by the user.
     let input_slice = std::slice::from_raw_parts(input, input_length);
@@ -118,7 +120,7 @@ pub unsafe extern "C" fn crypto_finalize(
     if ctx.is_null() || output.is_null() {
         return CryptoResult::PointerCannotBeNull;
     }
-    let internal_context: &mut InternalHashContex = &mut *(ctx.cast());
+    let internal_context: &mut InternalHashContext = &mut *(ctx.cast());
     if output_length != internal_context.output_size() {
         return CryptoResult::BadBufferOutputSize;
     }

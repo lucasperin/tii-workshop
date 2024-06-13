@@ -22,6 +22,8 @@
 
 #define SHA3_256_ALG_ID 1
 
+#define SHA3_512_ALG_ID 2
+
 /**
  * Byte length of Context internal state.
  */
