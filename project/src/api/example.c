@@ -5,7 +5,7 @@
 int main() {
 
     CryptoContext ctx = {0};
-    CryptoDigest digest = {0};
+    uint8_t digest[32] = {0};
     uint8_t input[5] = {0x68, 0x65, 0x6c, 0x6c, 0x6f};
 
     if(crypto_init(&ctx, SHA3_256_ALG_ID) != Success) {
@@ -16,7 +16,7 @@ int main() {
         printf("Error while updating\n");
         return 1;
     }
-    if (crypto_finalize(&ctx, &digest) != Success) {
+    if (crypto_finalize(&ctx, digest, sizeof(digest)) != Success) {
         printf("Error while finalizing\n");
         return 1;
 

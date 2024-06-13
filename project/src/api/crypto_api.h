@@ -28,11 +28,6 @@
 #define CRYPTO_CONTEXT_STATE_SIZE 45
 
 /**
- * Byte length of digest produced by library.
- */
-#define CRYPTO_DIGEST_SIZE 32
-
-/**
  * Crypto return type with Success or Failure error cases.
  *
  * Probably the best way to treat this enum type could be a similar approach that we use for
@@ -53,6 +48,7 @@ typedef enum {
   PointerCannotBeNull,
   BadOrUnsupportedAlgorithm,
   UninitializedOrCorruptedContext,
+  BadBufferOutputSize,
 } CryptoResult;
 
 /**
@@ -63,18 +59,6 @@ typedef enum {
 typedef struct {
   uint64_t state[CRYPTO_CONTEXT_STATE_SIZE];
 } CryptoContext;
-
-/**
- * Crypto digest, contains the bytes of the hash output.
- *
- * This type struct is defined as transparent in the rust code, translated to an array type in C.
- * The reason for this is that it is safer to cast the transparent type to a rust array type in
- * the rust code, since the struct (non-transparent) type could have additional overhead. This
- * allows us to cast the structure directly to an array safely, instead having to cast explicitly
- * the internal array member.
- *
- */
-typedef uint8_t CryptoDigest[CRYPTO_DIGEST_SIZE];
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,7 +80,10 @@ CRYPTO_MUST_USE CryptoResult crypto_init(CryptoContext *ctx, uint32_t algorithm_
  * # Safety
  * Pointers must not be null and input length must be correct.
  */
-CRYPTO_MUST_USE CryptoResult crypto_update(CryptoContext *ctx, const uint8_t *input, size_t length);
+CRYPTO_MUST_USE
+CryptoResult crypto_update(CryptoContext *ctx,
+                           const uint8_t *input,
+                           size_t input_length);
 
 /**
  * Crypto Finalize
@@ -111,7 +98,10 @@ CRYPTO_MUST_USE CryptoResult crypto_update(CryptoContext *ctx, const uint8_t *in
  * # Safety
  * Pointers must not be null.
  */
-CRYPTO_MUST_USE CryptoResult crypto_finalize(CryptoContext *ctx, CryptoDigest *result);
+CRYPTO_MUST_USE
+CryptoResult crypto_finalize(CryptoContext *ctx,
+                             uint8_t *output,
+                             size_t output_length);
 
 #ifdef __cplusplus
 } // extern "C"
