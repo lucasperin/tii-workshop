@@ -26,9 +26,9 @@ impl InternalHashContext {
         match algorithm_id {
             SHA256_ALG_ID => Some(Sha256(sha2::Sha256::new())),
             SHA3_256_ALG_ID => Some(Sha3_256(sha3::Sha3_256::new())),
-            _ => None,
             #[cfg(feature = "sha3_512")]
             SHA3_512_ALG_ID => Some(Sha3_512(sha3::Sha3_512::new())),
+            _ => None,
         }
     }
     pub fn udpate(&mut self, input: &[u8]) {
