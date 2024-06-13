@@ -1,6 +1,5 @@
 use crate::{SHA256_ALG_ID, SHA3_256_ALG_ID};
-use digest::Digest;
-use sha2::Sha256;
+use sha2::{Digest, Sha256};
 use sha3::Sha3_256;
 use InternalHashContex::*;
 
@@ -33,10 +32,17 @@ impl InternalHashContex {
             Sha3_256Context(hasher) => hasher.update(input),
         };
     }
-    pub fn finalize(&mut self) -> [u8; 32] {
+    pub fn finalize(&mut self, output: &mut [u8]) {
         match self {
-            Sha256Context(hasher) => hasher.finalize_reset().into(),
-            Sha3_256Context(hasher) => hasher.finalize_reset().into(),
+            Sha256Context(hasher) => hasher.finalize_into_reset(output.into()),
+            Sha3_256Context(hasher) => hasher.finalize_into_reset(output.into()),
+        };
+    }
+
+    pub fn output_size(&self) -> usize {
+        match self {
+            Sha256Context(_) => Sha256::output_size(),
+            Sha3_256Context(_) => Sha3_256::output_size(),
         }
     }
 }

@@ -25,6 +25,7 @@ pub enum CryptoResult {
     PointerCannotBeNull,
     BadOrUnsupportedAlgorithm,
     UninitializedOrCorruptedContext,
+    BadBufferOutputSize,
 }
 
 /// Crypto algorithm types
@@ -53,23 +54,6 @@ pub struct CryptoContext {
 
 sa::assert_eq_size!(CryptoContext, InternalHashContex);
 sa::assert_eq_align!(CryptoContext, InternalHashContex);
-
-/// Byte length of digest produced by library.
-pub const CRYPTO_DIGEST_SIZE: usize = 32;
-
-/// Crypto digest, contains the bytes of the hash output.
-///
-/// This type struct is defined as transparent in the rust code, translated to an array type in C.
-/// The reason for this is that it is safer to cast the transparent type to a rust array type in
-/// the rust code, since the struct (non-transparent) type could have additional overhead. This
-/// allows us to cast the structure directly to an array safely, instead having to cast explicitly
-/// the internal array member.
-///
-#[repr(transparent)]
-#[derive(Debug, Copy, Clone, Default)]
-pub struct CryptoDigest {
-    pub bytes: [u8; CRYPTO_DIGEST_SIZE],
-}
 
 /// Crypto init
 /// Initialize a context with a given algorithm.
@@ -100,13 +84,15 @@ pub unsafe extern "C" fn crypto_init(ctx: *mut CryptoContext, algorithm_id: u32)
 pub unsafe extern "C" fn crypto_update(
     ctx: *mut CryptoContext,
     input: *const u8,
-    length: usize,
+    input_length: usize,
 ) -> CryptoResult {
     if ctx.is_null() || input.is_null() {
         return CryptoResult::PointerCannotBeNull;
     }
     let internal_context: &mut InternalHashContex = &mut *(ctx.cast());
-    let input_slice = std::slice::from_raw_parts(input, length);
+    // This must be checked as `from_raw_parts_mut` has many undefined behavior conditions that
+    // must be guaranteed by the caller. In this case, some of them must be guaranteed by the user.
+    let input_slice = std::slice::from_raw_parts(input, input_length);
     internal_context.udpate(input_slice);
     CryptoResult::Success
 }
@@ -126,22 +112,27 @@ pub unsafe extern "C" fn crypto_update(
 #[no_mangle]
 pub unsafe extern "C" fn crypto_finalize(
     ctx: *mut CryptoContext,
-    result: *mut CryptoDigest,
+    output: *mut u8,
+    output_length: usize,
 ) -> CryptoResult {
-    if ctx.is_null() || result.is_null() {
+    if ctx.is_null() || output.is_null() {
         return CryptoResult::PointerCannotBeNull;
     }
     let internal_context: &mut InternalHashContex = &mut *(ctx.cast());
-    let ret = internal_context.finalize();
-    // Safe to use because return type CryptoDigest is transparent
-    ptr::write(result.cast(), ret);
+    if output_length != internal_context.output_size() {
+        return CryptoResult::BadBufferOutputSize;
+    }
+    // This must be checked as `from_raw_parts_mut` has many undefined behavior conditions that
+    // must be guaranteed by the caller. In this case, some of them must be guaranteed by the user.
+    let output_slice = std::slice::from_raw_parts_mut(output, output_length);
+    internal_context.finalize(output_slice);
+
     CryptoResult::Success
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::mem::MaybeUninit;
 
     #[test]
     fn test_sha3_256() {
@@ -169,14 +160,17 @@ mod tests {
         }
 
         // Finalize and get the digest
-        let mut digest = MaybeUninit::<CryptoDigest>::uninit();
+        let mut digest = [0u8; 32];
         unsafe {
             assert_eq!(
-                crypto_finalize(&mut state as *mut CryptoContext, digest.as_mut_ptr()),
+                crypto_finalize(
+                    &mut state as *mut CryptoContext,
+                    digest.as_mut_ptr(),
+                    digest.len()
+                ),
                 CryptoResult::Success
             )
         };
-        let digest = unsafe { digest.assume_init() };
 
         // Expected output of SHA3_256 of hello string (utf8)
         let expected: [u8; 32] = [
@@ -185,7 +179,7 @@ mod tests {
             0x23, 0x98, 0xf3, 0x92,
         ];
 
-        assert_eq!(digest.bytes, expected);
+        assert_eq!(digest, expected);
     }
 
     #[test]
@@ -215,14 +209,17 @@ mod tests {
         }
 
         // Finalize and get the digest
-        let mut digest = MaybeUninit::<CryptoDigest>::uninit();
+        let mut digest = [0u8; 32];
         unsafe {
             assert_eq!(
-                crypto_finalize(&mut state as *mut CryptoContext, digest.as_mut_ptr()),
+                crypto_finalize(
+                    &mut state as *mut CryptoContext,
+                    digest.as_mut_ptr(),
+                    digest.len()
+                ),
                 CryptoResult::Success
             )
         };
-        let digest = unsafe { digest.assume_init() };
 
         // Expected output of SHA256 of hello string (utf8)
         let expected: [u8; 32] = [
@@ -231,6 +228,6 @@ mod tests {
             0x93, 0x8b, 0x98, 0x24,
         ];
 
-        assert_eq!(digest.bytes, expected);
+        assert_eq!(digest, expected);
     }
 }
