@@ -5,18 +5,18 @@ use static_assertions as sa;
 use std::ptr;
 
 /// Crypto return type with Success or Failure error cases.
-/// 
+///
 /// Probably the best way to treat this enum type could be a similar approach that we use for
 /// the internal hash context, with global constant error definitions that are mapped internally
 /// to an enum type. This might allow for safer validation of unique error values assigned to
-/// unique enum labels, as well as adding message error handling with logs etc. 
-/// 
+/// unique enum labels, as well as adding message error handling with logs etc.
+///
 /// Using enum type is not bad, but we need to make sure that the Success/failure here always
-/// match the correct enum (integer) representation in the C api. Moving values around could 
-/// change the behavior of this and cause problems. 
-/// 
+/// match the correct enum (integer) representation in the C api. Moving values around could
+/// change the behavior of this and cause problems.
+///
 /// See the case for the SHA256_ALG_ID, for additional information.
-/// 
+///
 #[repr(C)]
 #[derive(Debug, Eq, PartialEq)]
 pub enum CryptoResult {
@@ -28,14 +28,14 @@ pub enum CryptoResult {
 }
 
 /// Crypto algorithm types
-/// 
+///
 /// Due to internal match cases, if the algorithm types are of the Enum type instead of constants
 /// we have a (possibly undefined) behavior that match assume any invalid enum type coming from the
 /// C api to be the last enum in the definition. That is, we cannot treat an unsupported case for
 /// bad algorithm input, as it will default to the last one declared in the enum. To avoid this,
 /// we changed the enum to a global ID constant that can be evaluated internally and can match
 /// invalid inputs in a well-defined way.
-/// 
+///
 pub const SHA256_ALG_ID: u32 = 0;
 pub const SHA3_256_ALG_ID: u32 = 1;
 
@@ -58,13 +58,13 @@ sa::assert_eq_align!(CryptoContext, InternalHashContex);
 pub const CRYPTO_DIGEST_SIZE: usize = 32;
 
 /// Crypto digest, contains the bytes of the hash output.
-/// 
+///
 /// This type struct is defined as transparent in the rust code, translated to an array type in C.
 /// The reason for this is that it is safer to cast the transparent type to a rust array type in
-/// the rust code, since the struct (non-transparent) type could have additional overhead. This 
+/// the rust code, since the struct (non-transparent) type could have additional overhead. This
 /// allows us to cast the structure directly to an array safely, instead having to cast explicitly
 /// the internal array member.
-/// 
+///
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone, Default)]
 pub struct CryptoDigest {
@@ -113,7 +113,7 @@ pub unsafe extern "C" fn crypto_update(
 
 /// Crypto Finalize
 /// Finalizes the digest computation and outputs result into bytes of the CryptoDigest.
-/// 
+///
 /// Perhaps a better approach to this API would be to allow the user to allocate necessary
 /// memory on his side. This will make the function a bit more unsafe in the user perspective,
 /// as he can use bad sizes and cause undefined behavior of the code. However, if we assume

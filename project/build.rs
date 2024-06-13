@@ -13,10 +13,7 @@ fn main() {
             panic!("Bindgen error");
         }
         Ok(bindings) => {
-            bindings
-                .write_to_file(
-                    out_path.join("src/api/crypto_api.h")
-                );
+            bindings.write_to_file(out_path.join("src/api/crypto_api.h"));
         }
     }
 }
