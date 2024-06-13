@@ -1,6 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
+    "project",
+    "macros",
     "p12",
     "p22",
     "p24",
